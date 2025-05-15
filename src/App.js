@@ -11,17 +11,27 @@ import {wordsList} from "./data/words";
 import StartScreen from './components/StartScreen';
 import Game from './components/Game';
 import GameOver from './components/GameOver';
+import WinScreen from './components/WinScreen';
+
 
 const stages = [
   {id: 1, name : "start"},
   {id: 2, name : "game"},
-  {id: 3, name : "end"},
+  {id: 3, name : "win"}, 
+  {id: 4, name : "end"},
 ];
+
 
 const guessesQty = 3;
 
 function App() {
-const [gameStage, setGameStage] = useState(stages[0].name);
+const [gameStage, setGameStage] = useState(stages[1].name);
+
+useEffect(() => {
+    setGameStage("start");
+  }, []);
+
+
 const [words] = useState(wordsList);
 
 const [pickedWord, setPickedWord] = useState("");
@@ -54,6 +64,7 @@ const category =
   const startGame = useCallback(() =>{
     //limpando as letras do jogo antigo
     clearLetterStates();
+    setGuesses(guessesQty);
 
     // pick word e category
     const {word, category} = pickedWordAndCategory()
@@ -113,28 +124,24 @@ const category =
         // resetando o jogo
         clearLetterStates();
 
-        setGameStage(stages[2].name);
+        setGameStage(stages[3].name);
       }
     },[guesses]);
 
 //checando a condicao de vitoria
-useEffect(() =>{
-
+useEffect(() => {
   const uniqueLetters = [...new Set(letters)];
 
-  // condicao de vitoria
-  if(guessedLetters.length === uniqueLetters.length){
-    //add score
-    setScore((actualScore) => actualScore += 100)
+  // não faz nada se o jogo já acabou
+  if (guesses <= 0) return;
 
-
-
-    //restart game com nova palavra
-    startGame();
-
+  // condição de vitória
+  if (guessedLetters.length === uniqueLetters.length) {
+    setScore((actualScore) => actualScore + 100);
+    setGameStage("win");
   }
+}, [guessedLetters, letters, guesses]);
 
-},[guessedLetters, letters, startGame]);
 
 // recomeçar o jogo
 const retry = () => {
@@ -143,11 +150,11 @@ const retry = () => {
   setGameStage(stages[0].name);
 };
 
-  return (
-    <div className="App">
-      {gameStage === 'start' && <StartScreen startGame={startGame}/>}
-      {gameStage === 'game' && (
-        <Game 
+return (
+  <div className="App">
+    {gameStage === 'start' && <StartScreen startGame={startGame} />}
+    {gameStage === 'game' && (
+      <Game 
         verifyLetter={verifyLetter}
         pickedWord={pickedWord}
         pickedCategory={pickedCategory}
@@ -156,11 +163,12 @@ const retry = () => {
         wrongLetters={wrongLetters}
         guesses={guesses}
         score={score}
-        />
-        )}
-      {gameStage === 'end' && <GameOver retry={retry} score={score}/>}
-    </div>
-  );
+      />
+    )}
+    {gameStage === 'win' && <WinScreen nextRound={startGame} />}
+    {gameStage === 'end' && <GameOver retry={retry} score={score} />}
+  </div>
+);
 }
 
 export default App;
